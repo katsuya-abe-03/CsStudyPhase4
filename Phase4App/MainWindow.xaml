@@ -1,0 +1,96 @@
+﻿<Window x:Class="Phase4App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Phase4App"
+        mc:Ignorable="d"
+        Title="フェーズ4アプリ" Height="600" Width="800" Closing="MainWindowClosing">
+    <Window.Resources>
+        <local:SizeStrConverter x:Key="SizeStrConv"/>
+
+        <Style TargetType="GroupBox">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Height" Value="45" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Width" Value="30" />
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Width" Value="40" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0,15,0,0" />
+            <Setter Property="Width" Value="370" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Width" Value="70" />
+            <Setter Property="IsSnapToTickEnabled" Value="True" />
+            <Setter Property="SmallChange" Value="1" />
+        </Style>
+    </Window.Resources>
+    <DockPanel>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+            <GroupBox Header="操作">
+                <Button Content="開く"/>
+            </GroupBox>
+            <GroupBox Header="サムネイルのサイズ">
+                <StackPanel Orientation="Horizontal">
+                    <!-- これだとビルドエラー。なぜ？ <TextBlock Text="{Binding Value, Converter={StaticResource SizeStrConv}, ElementName=SldThum, Mode=OneWay}"/>-->
+                    <TextBlock Text="{Binding Path=Value,ElementName=SldThum, Converter={StaticResource SizeStrConv}, Mode=OneWay}"/>
+                    <Slider x:Name="SldThum" Minimum="1" Maximum="3" Value="2" TickPlacement="BottomRight"/>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="拡大/縮小">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Value, ElementName=SldImageSizeRate, StringFormat={}{0:N1}倍：}" MouseDown="TbImageSizeRateMouseDown"/>
+                    <Slider x:Name="SldImageSizeRate" Minimum="0.1" Maximum="5" Value="1" SmallChange="0.1" TickFrequency="0.1"/>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="回転">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Value, ElementName=SldImageAngle, StringFormat={}{0:000}度：}"/>
+                    <Slider x:Name="SldImageAngle" Minimum="0" Maximum="360" Value="0"/>
+                </StackPanel>
+            </GroupBox>
+            <!--<TextBox Name="tbImagePath" Text="{Binding Source, ElementName=Image, Mode=TwoWay}"/>-->
+            <TextBox Name="tbImagePath"/>
+        </StackPanel>
+        <ListBox x:Name="listBoxThum" DockPanel.Dock="Top" Height="100">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding imageFileName}"
+                                   Width="50"
+                                   Height="50"
+                                   Margin="10"
+                                   />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <!--VerticalScrollBarVisibility="Auto"にしないとデフォルトでスクロールバーがdisableで表示される-->
+        <ScrollViewer x:Name="scrollViewer" DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image x:Name="ImageView"   Source="{Binding Text, ElementName=tbImagePath, Mode=OneWay}" Stretch="None">
+                <Image.LayoutTransform>
+                    <!--TransformGroupを入れないと複数のTransformが指定できない-->
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="{Binding Path=Value,ElementName=SldImageSizeRate}" ScaleY="{Binding Path=Value,ElementName=SldImageSizeRate}"/>
+                        <RotateTransform Angle="{Binding Path=Value,ElementName=SldImageAngle}"/>
+                    </TransformGroup>
+                </Image.LayoutTransform>
+                
+            </Image>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
