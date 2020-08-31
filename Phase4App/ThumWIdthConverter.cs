@@ -7,14 +7,15 @@ using System.Windows.Data;
 
 namespace Phase4App
 {
-    public class SizeStrConverter : IValueConverter
+    public class ThumWidthConverter : IValueConverter
     {
-        //仕様で1～3のため、先頭に空文字
-        private static readonly string[] sizeStr = {"", "Small","Middle","Large" };
+        private const int thumSmallSize = 40;
+        public const int thumBigSize = 40 * 3;
 
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            return sizeStr[(byte)(double)value];
+            //valueは、仕様で1(small)～3(big)
+            return (double)value * thumSmallSize;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
