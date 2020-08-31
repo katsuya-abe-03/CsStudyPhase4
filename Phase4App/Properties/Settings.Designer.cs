@@ -73,13 +73,25 @@ namespace Phase4App.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SelectImagePath {
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int SelectImageIdx {
             get {
-                return ((string)(this["SelectImagePath"]));
+                return ((int)(this["SelectImageIdx"]));
             }
             set {
-                this["SelectImagePath"] = value;
+                this["SelectImageIdx"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SelectFolderPath {
+            get {
+                return ((string)(this["SelectFolderPath"]));
+            }
+            set {
+                this["SelectFolderPath"] = value;
             }
         }
     }

@@ -4,10 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Phase4App"
+        xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="フェーズ4アプリ" Height="600" Width="800" Closing="MainWindowClosing">
+        Title="フェーズ4アプリ" Height="600" Width="800" Closing="MainWindowClosing" ContentRendered="MainWindowContentRendered">
     <Window.Resources>
         <local:SizeStrConverter x:Key="SizeStrConv"/>
+        <local:ThumWidthConverter x:Key="ThumWidthConv"/>        
 
         <Style TargetType="GroupBox">
             <Setter Property="HorizontalAlignment" Value="Left" />
@@ -29,7 +31,6 @@
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="Margin" Value="0,15,0,0" />
             <Setter Property="Width" Value="370" />
-            <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
         <Style TargetType="Slider">
             <Setter Property="HorizontalAlignment" Value="Left" />
@@ -42,11 +43,10 @@
     <DockPanel>
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
             <GroupBox Header="操作">
-                <Button Content="開く"/>
+                <Button Content="開く" Click="ClickSelectFolderButton"/>
             </GroupBox>
             <GroupBox Header="サムネイルのサイズ">
                 <StackPanel Orientation="Horizontal">
-                    <!-- これだとビルドエラー。なぜ？ <TextBlock Text="{Binding Value, Converter={StaticResource SizeStrConv}, ElementName=SldThum, Mode=OneWay}"/>-->
                     <TextBlock Text="{Binding Path=Value,ElementName=SldThum, Converter={StaticResource SizeStrConv}, Mode=OneWay}"/>
                     <Slider x:Name="SldThum" Minimum="1" Maximum="3" Value="2" TickPlacement="BottomRight"/>
                 </StackPanel>
@@ -61,27 +61,51 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Value, ElementName=SldImageAngle, StringFormat={}{0:000}度：}"/>
                     <Slider x:Name="SldImageAngle" Minimum="0" Maximum="360" Value="0"/>
+                    <!--こういう書き方もできる-->
+                    <!--<Slider x:Name="SldImageAngle">
+                        <Slider.Minimum>0</Slider.Minimum>
+                        <Slider.Maximum>360</Slider.Maximum>
+                        <Slider.Value>0</Slider.Value>
+                        </Slider>-->
                 </StackPanel>
             </GroupBox>
-            <!--<TextBox Name="tbImagePath" Text="{Binding Source, ElementName=Image, Mode=TwoWay}"/>-->
-            <TextBox Name="tbImagePath"/>
+            <!--リードオンリーにしないと、書き込みした後に挙動がおかしくなる。というか、データバインディングしているのに、書き込める自体が矛盾している気がする-->
+            <TextBox Name="tbImagePath" Text="{Binding Path=Source, ElementName=ImageView}" IsReadOnly="True"/>
+            <!--このバインディングはなぜか上手く動かなかった。Resolve source deferredされDetachされたが、原因はわからず。-->
+            <!--<TextBox Name="tbImagePath" Text="{Binding SelectedValue.FilePath, ElementName=listBoxThum, Mode=OneWay, diag:PresentationTraceSources.TraceLevel=Medium}"/>-->
         </StackPanel>
-        <ListBox x:Name="listBoxThum" DockPanel.Dock="Top" Height="100">
-            <ListBox.ItemTemplate>
+
+        <StackPanel DockPanel.Dock="Top">
+            <ProgressBar x:Name="folderReadProgressBar" Width="780" Height="20" HorizontalAlignment="Left"/>
+        </StackPanel>
+        <!--高さ指定なしでも、画像が選ばれている時は普通に動作する。ただ、何も選ばれていない時に高さを与えるなら下記でうまくいったがここまでやる必要あるか？-->
+        <!--<ListBox x:Name="listBoxThum" ItemsSource="{Binding}" DockPanel.Dock="Top" 
+                 Height="{Binding Path=Value,ElementName=SldThum, Converter={StaticResource ThumWidthConv}}">-->
+            <ListBox x:Name="listBoxThum" ItemsSource="{Binding}" DockPanel.Dock="Top">
+                <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding imageFileName}"
-                                   Width="50"
-                                   Height="50"
-                                   Margin="10"
-                                   />
+                    <StackPanel>
+                        <TextBlock Text="{Binding Path=FileName}" Height="20"/>
+                        <!--メモリ使用料を抑えるために縮小したbitmapをバインディング。-->
+                        <Image Source="{Binding Path=Bitmap}" 
+                               Width= "{Binding Path=Value,ElementName=SldThum, Converter={StaticResource ThumWidthConv}, Mode=OneWay}"/>
+                        <!--文字を重ねるなら下記でできたが、重なってない方が見やすいので仕様変更-->
+                        <!--Margin="0,-20,0,0" Panel.ZIndex="1"/>-->
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
+            <!--水平表示に設定-->
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+
         </ListBox>
         <!--VerticalScrollBarVisibility="Auto"にしないとデフォルトでスクロールバーがdisableで表示される-->
         <ScrollViewer x:Name="scrollViewer" DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <Image x:Name="ImageView"   Source="{Binding Text, ElementName=tbImagePath, Mode=OneWay}" Stretch="None">
+            <!--縮小画でなく元画を読み込むため、FilePathをバインディング-->
+            <Image x:Name="ImageView"   Source="{Binding SelectedValue.FilePath, ElementName=listBoxThum, Mode=OneWay, diag:PresentationTraceSources.TraceLevel=Medium}" Stretch="None">
                 <Image.LayoutTransform>
                     <!--TransformGroupを入れないと複数のTransformが指定できない-->
                     <TransformGroup>
@@ -89,7 +113,7 @@
                         <RotateTransform Angle="{Binding Path=Value,ElementName=SldImageAngle}"/>
                     </TransformGroup>
                 </Image.LayoutTransform>
-                
+
             </Image>
         </ScrollViewer>
     </DockPanel>
